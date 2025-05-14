@@ -1,0 +1,55 @@
+<body>
+    <div id="chat-container"> 
+        <ul id="messages"></ul> 
+        <form id="form" action="">  
+            <input id="input" autocomplete="off" placeholder="Type a message..." />
+            <button id="sendBtn">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let username = "";
+
+        while (!username) {
+            username = prompt("Enter your username:");
+        }
+
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value.trim()) {
+                const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                socket.emit('chat message', {
+                    user: username,
+                    text: input.value,
+                    time: time
+                });
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', (msg) => {
+            const item = document.createElement('li');
+            item.innerHTML = `<strong>${msg.user}</strong> (${msg.time}): ${msg.text}`;
+            if (msg.user === username) {
+                item.classList.add('self');
+            }
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+        socket.emit('user joined', username);
+
+        socket.on('system message', (msg) => {
+            const item = document.createElement('li');
+            item.textContent = msg;
+            item.classList.add('system-message');
+            messages.appendChild(item);
+        });
+    </script>
+</body>
